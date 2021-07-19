@@ -1,0 +1,370 @@
+<?php
+session_start();
+if (!isset($_SESSION['nID']))
+   header("location:login.php");
+require("databasecon.php");
+
+
+?>
+
+//###################################################################
+ //#####################  insert #####################################
+ //###################################################################
+<?php
+     if(isset($_POST['btnInsert']))
+     {
+
+ if(isset($_POST['type'    ]))      $type  = $_POST ['type'    ];   else $type ="" ;
+ if(isset($_POST['txtdesc' ]))      $desc  = $_POST ['txtdesc' ];   else $desc ="" ;
+ if(isset($_POST['txtprice']))      $price = $_POST ['txtprice'];   else $price="" ;
+ if(isset($_POST['txtPhoto']))      $image = $_POST ['txtPhoto'];   else $image="" ;
+ if(isset($_POST['txtRank' ]))      $rank  = $_POST ['txtRank' ];   else $rank =0 ;
+ $filename = $_FILES["txtPhoto" ]["name"    ];
+ $tempname = $_FILES["txtPhoto" ]["tmp_name"];
+ $size     = $_FILES['txtPhoto' ]['size'    ];
+ //$folder   = "menu/".$filename;
+
+
+ if($size>0 && $size<=2097152){
+
+
+   $sql1="select max(id) from menu";//get the max id
+   $res=mysqli_query($link,$sql1);
+   $rows=mysqli_fetch_array($res);
+   $photonb=$rows[0]+1;//max id +1 to get a unique photoname
+
+   $a = explode('.',$filename);
+   $ext=strtolower($a[count($a) - 1]);//get extension of photo
+   $nm=strtolower($a[0]);//name of photo without ext
+   $photoname=$nm."(".$photonb.").".$ext;//get the full name of the photo("name(id).ext")
+
+   $folder   = "menu/".$photoname;
+   $sql="insert into menu(type,description,rank,price,photo)
+         values('$type','$desc',$rank,$price,'$photoname')";
+         // Execute query
+         $succ=mysqli_query($link,$sql);
+
+        if($succ==true)
+        {
+            copy($tempname, $folder);// Now let's move the uploaded image into the folder:menu
+          echo "<script>alert('Description:$desc,Type:$type,Price:$price Added Successfully')</script>";
+         }
+        else
+        {
+             echo "<script>alert('Failed to insert item')</script>";
+       }
+
+       } else echo"<script>alert('Please enter a compatable file 0<file< 2mb');</script>";//alert if >2mb
+       }
+ ?>
+  <script>
+    function validate(val){
+       var a = val.value.split(".");
+       if(a[a.length-1].toLowerCase() == 'jpg' || a[a.length-1].toLowerCase() == 'png' || a[a.length-1].toLowerCase() == 'gif')
+         document.getElementById("btnUpload").disabled =false; //activate the upload button
+       else{
+         document.getElementById("txtPhoto").value="";
+         alert("Please enter a jpg,png,gif image");
+       }
+     }
+   </script>
+<!DOCTYPE html>
+<html lang="en"><!-- Basic -->
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <!-- Mobile Metas -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+     <!-- Site Metas -->
+    <title>Bouza Center Admin</title>
+    <meta name="keywords" content="">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+
+    <!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+<!-- jQuery library -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+<!-- Popper JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+
+<!-- Latest compiled JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+<script src="js/aj.js"></script>
+<link rel="stylesheet" href="css/menuadmin.css">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+<!-- Data table -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.css">
+
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.js"></script>
+</head>
+
+<body >
+
+
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+  <a class="navbar-brand" href="index.php">Home</a>
+   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+     <span class="navbar-toggler-icon"></span>
+   </button>
+   <div class="collapse navbar-collapse"  id="navbarNav">
+     <ul class="navbar-nav "> <!-- add ml-auto float left-->
+
+       <!--<li class="nav-item dropdown active">
+        <a class="nav-link dropdown-toggle" href="menu_admin.php" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Menu
+        </a>
+        <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+          <a class="dropdown-item" href="menu_admin.php#show">Show All </a>
+          <a class="dropdown-item" href="menu_admin.php#insert">Add Items</a>
+          <a class="dropdown-item" href="menu_admin.php#cat">Manage Catagories</a>
+        </div>
+      </li>-->
+
+       <li class="nav-item">
+         <a class="nav-link" href="gallery_admin.php">Gallery</a>
+       </li>
+       <li class="nav-item">
+         <a class="nav-link" href="order_admin.php">Orders</a>
+       </li>
+       <li class="nav-item">
+         <a class="nav-link" href=sales_admin.php>Sales</a>
+       </li>
+
+     </ul>
+   </div>
+  </nav>
+
+
+<!--############################################################################-->
+<!--#####################show items section#####################################-->
+<!--############################################################################-->
+
+
+
+  <div class="container mrgn" id=container>
+      <h1 class="text-center">Menu Items</h1>
+      <div class="alert-success text-center" id=msg>  </div>
+<div class="table-responsive">
+  <table id="example" class="display" >
+        <caption class="text-center">Menu Items</caption>
+<thead style=width:20px;>
+<tr >  <th>ID</th><th>Type</th><th>Description</th><th>Rank</th> <th>Price </th> <th>Photo</th> <th>Options</th> </tr>
+</thead>
+<tbody id=table_items>
+
+
+<?php
+$sql="select * from menu";
+$res=mysqli_query($link,$sql);
+while($rows = mysqli_fetch_array($res))
+{
+echo"
+<tr style=font-size:20px; id='row_$rows[0]'>
+<td>".$rows[0]."</td>
+<td> <input id='txttype_$rows[0]' class=form-control type=text value='".$rows[1]."' ></td>
+<td><input id='txtdesc_$rows[0]' class=form-control type=text value='".$rows[2]."' ></td>
+<td><input id='txtrank_$rows[0]' class=form-control type=text value='".$rows[3]."' ></td>
+<td><input id='txtprice_$rows[0]' class=form-control type=text value='".$rows[4]."' ></td>
+<td><img id='txtphoto_$rows[0]' class=menuimg src='menu/$rows[5]'></td>
+<td >
+<i class='text-success fas fa-edit ' onclick=updateitem('".$rows['id']."') id='btnupdate'></i>
+<i class='text-danger fas fa-trash ' onclick=delitem('".$rows['id']."') id='btndel'></i>
+
+</td>
+</tr>
+";
+
+} ?>
+
+</tbody>
+ <tfoot style="background-color:black;">
+   <form class="" enctype="multipart/form-data" method="post">
+   <tr >
+     <td style="color:white;"> Add Item</td>
+     <td>
+
+       <select  name=type id='txttype_0' class="custom-select" >
+           <option value="Select Type">Select Type</option>
+           <?php
+      //##################### fill combox with catagory####################
+
+              $sql = "select * from catagory";
+              $res=mysqli_query($link,$sql);
+                  while($rows=mysqli_fetch_assoc($res))
+                  {echo "<option value=".$rows['name'].">".$rows['name']."</option>";}
+      //##################### end fill combobox ############################
+              ?>
+        </select>
+      </td>
+
+     <td> <input type=text placeholder=Description name='txtdesc_0'  id='txtdesc_0' class="form-control" > </td>
+     <td> <input type=text class="form-control" name='txtrank_0' id='txtrank_0' placeholder=Rank> </td>
+     <td><input type=text  class="form-control" name='txtprice_0' placeholder=Price  id='txtprice_0'> </td>
+     <td>
+        <input  type=file name=txtPhoto  id='photo_0'> </td>
+     <td> <button type="submit" name='btnInsert' class="btn btn-primary" >Add</button></td>
+   </tr>
+   </form>
+ </tfoot>
+</table>
+</div>
+</div>
+ <!--############################################################################-->
+<!--##################### end of show items section############################-->
+<!--############################################################################-->
+
+
+
+ <!--############################################################################-->
+ <!--############################### Add Item ###################################-->
+ <!--############################################################################-->
+ <div id=insert>
+     <div class="container">
+ <form name=form2  method=post enctype="multipart/form-data">
+     <h1 class="text-center">Add Items</h1>
+
+ <div class="form-group">
+ <label for=type>Type:</label>
+
+  <select  name=type id=type class="custom-select" >
+      <option value="Select Type">Select Type</option>
+      <?php
+ //##################### fill combox with catagory####################
+
+         $sql = "select * from catagory";
+         $res=mysqli_query($link,$sql);
+             while($rows=mysqli_fetch_assoc($res))
+             {echo "<option value=".$rows['name'].">".$rows['name']."</option>";}
+ //##################### end fill combobox ############################
+         ?>
+   </select>
+ </div>
+
+
+   <div class="form-group">
+   <label for=txtdesc>Description:</label>
+   <input type=text placeholder=Description name=txtdesc id=txtdesc class="form-control" >
+   </div>
+
+
+<div class="form-group">
+<label for=txtprice>Price:</label>
+<input type=text  class="form-control" placeholder=Price name=txtprice id="txtprice">
+Photo(size<2MB):
+</div>
+
+<div class="custom-file">
+ <input class="custom-file-input" type=file name=txtPhoto onchange="validate(this)" id=txtPhoto accept="image/png,image/gif,image/jpg">
+ <label  for="txtPhoto" class="custom-file-label">Choose file:</label>
+</div>
+
+<script>
+// Add the following code if you want the name of the file appear on select
+$(".custom-file-input").on("change", function() {
+  var fileName = $(this).val().split("\\").pop();
+  $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
+});
+</script>
+
+
+<div class="form-group">
+<label for="txtRank">Rank:</label>
+ <input type=text class="form-control" name=txtRank id="txtRank" placeholder=Rank>
+</div>
+
+
+<div class="text-center">
+<input type=submit class="btn btn-primary btn-lg" value=Insert name=btnInsert>
+</div>
+
+
+ </form>
+     </div>
+     </div>
+ <!--############################################################################-->
+ <!--############################### end  Add Item ############################-->
+ <!--############################################################################-->
+
+<!--############################################################################-->
+<!--############################### Manage catagory ############################-->
+<!--############################################################################-->
+<br><br><br><br><br><br>
+  <div class="container">
+<form method=post>
+
+
+    <h1 class="text-center">Manage Catagories</h1>
+    <div class=" text-center" id=msgcat>
+
+    </div>
+
+        <table class="tableCat">
+     <thead>
+         <th>Id</th>
+         <th>Name</th>
+         <th>Options</th>
+     </thead>
+
+     <tbody id=table_cat>
+<?php
+//##################### fill catagory table##########################
+
+$sql="select * from catagory ORDER BY id  ASC";
+
+$res=mysqli_query($link,$sql);
+
+while($rows=mysqli_fetch_array($res))
+{
+echo"
+<tr id='rowcat_".$rows[0]."'>
+
+ <td data-label='id'>".$rows[0]."</td>
+<td data-label='Name'><input  type=text class=form-control id='cat_".$rows[0]."'  value='".$rows[1]."'></td>
+
+<td data-label='options'>
+<i class='text-success fas fa-edit fa-2x' onclick=updatecat(".$rows[0].")></i>
+
+<i class='text-danger fas fa-trash fa-2x' onclick=deletecat(".$rows[0].")></i>
+
+</td>
+</tr>";
+
+}
+
+//#####################end fill catagory table#######################
+?>
+</tbody>
+        </table>
+
+<br>
+
+<form class="form-inline"  method="post">
+<div class="input-group mb-3">
+<input type=text   name=txtCat    id=txtCat_0 placeholder="Add Catagory" class="form-control">
+<div class="input-group-append">
+ <button class="btn btn-primary" name=btnAddCat onclick=addcat();  type="button">Add</button>
+</div>
+</div>
+</form>
+
+</div>
+<!--############################################################################-->
+<!--###############################end  Manage Catagory############################-->
+<!--############################################################################-->
+
+</form>
+
+</body></html>
+ <script type="text/javascript">//launch dataTables
+$(document).ready(function() {
+   $('#example').DataTable();
+});
+</script>
